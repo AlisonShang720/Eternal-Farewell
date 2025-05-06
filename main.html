@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>经历·Farewell - 主界面</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"/>
+    <style>
+        body { margin: 0; padding: 0; font-family: 'PingFang SC', 'Microsoft YaHei', sans-serif; }
+        #map { height: 100vh; width: 100%; }
+        #sidebar { position: fixed; left: -300px; top: 0; width: 300px; height: 100%; background: white; z-index: 1000; transition: 0.3s; }
+        #sidebar.active { left: 0; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #eee; }
+        .sidebar-content { padding: 20px; }
+        .sidebar-item { padding: 15px 0; border-bottom: 1px solid #eee; text-align: center; }
+        #record-btn { position: fixed; right: 20px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4285f4; color: white; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; }
+        #menu-btn { position: fixed; left: 20px; top: 20px; z-index: 1000; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    </style>
+</head>
+<body>
+    <button id="menu-btn"><i class="fas fa-bars"></i></button>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-avatar" style="width: 80px; height: 80px; border-radius: 50%; background: #eee; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-user" style="font-size: 30px; color: #888;"></i>
+            </div>
+            <div class="user-name">用户名</div>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-item" onclick="showFrame('footprints-frame')">我的足迹</div>
+            <div class="sidebar-item" onclick="showFrame('categories-frame')">我的分类</div>
+            <div class="sidebar-item" onclick="showFrame('settings-frame')">设置</div>
+        </div>
+    </div>
+
+    <div id="map"></div>
+    <button id="record-btn"><i class="fas fa-plus"></i></button>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
+    <script>
+        // 初始化地图
+        const map = L.map('map').setView([39.9042, 116.4074], 13);
+        L.tileLayer('https://webrd{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
+            subdomains: ['01', '02', '03', '04'],
+            attribution: '© 高德地图'
+        }).addTo(map);
+
+        // 侧边栏控制
+        document.getElementById('menu-btn').addEventListener('click', function() {
+            document.getElementById('sidebar').classList.toggle('active');
+            // 切换菜单按钮图标
+            const icon = this.querySelector('i');
+            if (document.getElementById('sidebar').classList.contains('active')) {
+                icon.classList.replace('fa-bars', 'fa-times');
+            } else {
+                icon.classList.replace('fa-times', 'fa-bars');
+            }
+        });
+        
+        // 菜单项点击效果
+        document.querySelectorAll('.sidebar-item').forEach(item => {
+            item.addEventListener('click', function() {
+                // 移除所有菜单项的active类
+                document.querySelectorAll('.sidebar-item').forEach(i => {
+                    i.classList.remove('active');
+                });
+                // 为当前点击项添加active类
+                this.classList.add('active');
+                // 关闭侧边栏
+                document.getElementById('sidebar').classList.remove('active');
+                document.getElementById('menu-btn').querySelector('i')
+                    .classList.replace('fa-times', 'fa-bars');
+            });
+        });
+
+        // 记录按钮功能
+        document.getElementById('record-btn').addEventListener('click', function() {
+            const now = new Date();
+            const timestamp = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
+            const coords = map.getCenter();
+            alert(`已记录：${timestamp}\n位置：${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+        });
+
+        // 显示iframe框架
+        function showFrame(frameId) {
+            window.parent.showFrame(frameId);
+        }
+    </script>
+</body>
+</html>
