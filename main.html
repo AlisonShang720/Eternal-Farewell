@@ -16,7 +16,7 @@
         .sidebar-content { padding: 20px; }
         .sidebar-item { padding: 15px 0; border-bottom: 1px solid #eee; text-align: center; }
         #record-btn { position: fixed; right: 20px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4285f4; color: white; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; }
-        #menu-btn { position: fixed; left: 20px; top: 20px; z-index: 1000; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        #menu-btn { position: fixed; left: 20px; top: 20px; z-index: 1000; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: move; user-select: none; }
     </style>
 </head>
 <body>
@@ -29,9 +29,9 @@
             <div class="user-name">用户名</div>
         </div>
         <div class="sidebar-content">
-            <div class="sidebar-item" onclick="showFrame('footprints-frame')">我的足迹</div>
-            <div class="sidebar-item" onclick="showFrame('categories-frame')">我的分类</div>
-            <div class="sidebar-item" onclick="showFrame('settings-frame')">设置</div>
+            <div class="sidebar-item" onclick="window.location.href='footprints.html'">我的足迹</div>
+            <div class="sidebar-item" onclick="window.location.href='categories.html'">我的分类</div>
+            <div class="sidebar-item" onclick="window.location.href='settings.html'">设置</div>
         </div>
     </div>
 
@@ -42,14 +42,60 @@
     <script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"></script>
     <script>
         // 初始化地图
-        const map = L.map('map').setView([39.9042, 116.4074], 13);
+        const map = L.map('map', {
+            zoomControl: false
+        }).setView([39.9042, 116.4074], 13);
+        
+        // 从本地存储加载用户信息
+        const userAvatar = localStorage.getItem('userAvatar');
+        const userNickname = localStorage.getItem('userNickname') || '用户名';
+        
+        // 更新侧边栏用户信息
+        if (userAvatar) {
+            document.querySelector('.user-avatar').innerHTML = 
+                `<img src="${userAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+        }
+        document.querySelector('.user-name').textContent = userNickname;
         L.tileLayer('https://webrd{s}.is.autonavi.com/appmaptile?lang=zh_cn&size=1&scale=1&style=8&x={x}&y={y}&z={z}', {
             subdomains: ['01', '02', '03', '04'],
             attribution: '© 高德地图'
         }).addTo(map);
 
         // 侧边栏控制
-        document.getElementById('menu-btn').addEventListener('click', function() {
+        const menuBtn = document.getElementById('menu-btn');
+        
+        // 拖拽功能
+        menuBtn.addEventListener('mousedown', function(e) {
+            e.preventDefault();
+            
+            const startX = e.clientX;
+            const startY = e.clientY;
+            const startLeft = parseInt(window.getComputedStyle(menuBtn).left);
+            const startTop = parseInt(window.getComputedStyle(menuBtn).top);
+            
+            function moveHandler(e) {
+                const dx = e.clientX - startX;
+                const dy = e.clientY - startY;
+                menuBtn.style.left = (startLeft + dx) + 'px';
+                menuBtn.style.top = (startTop + dy) + 'px';
+            }
+            
+            function upHandler() {
+                document.removeEventListener('mousemove', moveHandler);
+                document.removeEventListener('mouseup', upHandler);
+            }
+            
+            document.addEventListener('mousemove', moveHandler);
+            document.addEventListener('mouseup', upHandler);
+        });
+        
+        menuBtn.addEventListener('click', function(e) {
+            // 防止拖拽时触发点击事件
+            if (Math.abs(parseInt(menuBtn.style.left || '20') - 20) > 5 || 
+                Math.abs(parseInt(menuBtn.style.top || '20') - 20) > 5) {
+                return;
+            }
+            
             document.getElementById('sidebar').classList.toggle('active');
             // 切换菜单按钮图标
             const icon = this.querySelector('i');
@@ -87,6 +133,15 @@
         // 显示iframe框架
         function showFrame(frameId) {
             window.parent.showFrame(frameId);
+        }
+        
+        // 更新头像
+        function updateAvatar(avatarUrl) {
+            const avatarElement = document.querySelector('.user-avatar');
+            if (avatarElement) {
+                avatarElement.innerHTML = 
+                    `<img src="${avatarUrl}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            }
         }
     </script>
 </body>

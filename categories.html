@@ -13,10 +13,119 @@
         .category-name { flex: 1; font-weight: bold; }
         #add-category { background: #4285f4; color: white; margin: 15px; border-radius: 10px; padding: 15px; text-align: center; font-weight: bold; }
         #menu-btn { position: fixed; left: 20px; top: 20px; z-index: 1000; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        #sidebar { position: fixed; left: -300px; top: 0; width: 300px; height: 100%; background: white; z-index: 1000; transition: 0.3s; }
+        #sidebar.active { left: 0; }
+        .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #eee; }
+        .sidebar-content { padding: 20px; }
+        .sidebar-item { padding: 15px 0; border-bottom: 1px solid #eee; text-align: center; }
     </style>
 </head>
 <body>
     <button id="menu-btn"><i class="fas fa-bars"></i></button>
+    <div id="sidebar">
+        <div class="sidebar-header">
+            <div class="user-avatar" style="width: 80px; height: 80px; border-radius: 50%; background: #eee; margin: 0 auto 10px; display: flex; align-items: center; justify-content: center;">
+                <i class="fas fa-user" style="font-size: 30px; color: #888;"></i>
+            </div>
+            <div class="user-name">用户名</div>
+        </div>
+        <div class="sidebar-content">
+            <div class="sidebar-item" onclick="window.location.href='footprints.html'">我的足迹</div>
+            <div class="sidebar-item" onclick="window.location.href='categories.html'">我的分类</div>
+            <div class="sidebar-item" onclick="window.location.href='settings.html'">设置</div>
+            <div class="sidebar-item" onclick="window.location.href='main.html'">back to the world</div>
+        </div>
+    </div>
+    
+    <script>
+        // 拖拽功能实现
+        document.addEventListener('DOMContentLoaded', function() {
+            const btn = document.getElementById('menu-btn');
+            let isDragging = false;
+            let offsetX, offsetY;
+            
+            // 鼠标按下事件
+            btn.addEventListener('mousedown', function(e) {
+                isDragging = true;
+                offsetX = e.clientX - btn.getBoundingClientRect().left;
+                offsetY = e.clientY - btn.getBoundingClientRect().top;
+                btn.style.cursor = 'grabbing';
+            });
+            
+            // 鼠标移动事件
+            document.addEventListener('mousemove', function(e) {
+                if (!isDragging) return;
+                
+                let x = e.clientX - offsetX;
+                let y = e.clientY - offsetY;
+                
+                // 限制在可视范围内
+                const maxX = window.innerWidth - btn.offsetWidth;
+                const maxY = window.innerHeight - btn.offsetHeight;
+                
+                x = Math.max(0, Math.min(x, maxX));
+                y = Math.max(0, Math.min(y, maxY));
+                
+                btn.style.left = x + 'px';
+                btn.style.top = y + 'px';
+                btn.style.position = 'fixed';
+            });
+            
+            // 鼠标释放事件
+            document.addEventListener('mouseup', function() {
+                isDragging = false;
+                btn.style.cursor = 'grab';
+            });
+            
+            // 初始化按钮样式
+            btn.style.cursor = 'grab';
+            
+            // 从本地存储加载用户信息
+            const userAvatar = localStorage.getItem('userAvatar');
+            const userNickname = localStorage.getItem('userNickname') || '用户名';
+            
+            // 更新侧边栏用户信息
+            if (userAvatar) {
+                document.querySelector('.user-avatar').innerHTML = 
+                    `<img src="${userAvatar}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+            }
+            document.querySelector('.user-name').textContent = userNickname;
+            
+            // 侧边栏控制
+            btn.addEventListener('click', function(e) {
+                // 防止拖拽时触发点击事件
+                if (Math.abs(parseInt(btn.style.left || '20') - 20) > 5 || 
+                    Math.abs(parseInt(btn.style.top || '20') - 20) > 5) {
+                    return;
+                }
+                
+                document.getElementById('sidebar').classList.toggle('active');
+                // 切换菜单按钮图标
+                const icon = this.querySelector('i');
+                if (document.getElementById('sidebar').classList.contains('active')) {
+                    icon.classList.replace('fa-bars', 'fa-times');
+                } else {
+                    icon.classList.replace('fa-times', 'fa-bars');
+                }
+            });
+            
+            // 菜单项点击效果
+            document.querySelectorAll('.sidebar-item').forEach(item => {
+                item.addEventListener('click', function() {
+                    // 移除所有菜单项的active类
+                    document.querySelectorAll('.sidebar-item').forEach(i => {
+                        i.classList.remove('active');
+                    });
+                    // 为当前点击项添加active类
+                    this.classList.add('active');
+                    // 关闭侧边栏
+                    document.getElementById('sidebar').classList.remove('active');
+                    document.getElementById('menu-btn').querySelector('i')
+                        .classList.replace('fa-times', 'fa-bars');
+                });
+            });
+        });
+    </script>
     
     <div class="category-list">
         <div class="category-item">
