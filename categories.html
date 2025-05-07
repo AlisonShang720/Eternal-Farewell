@@ -44,38 +44,66 @@
             let isDragging = false;
             let offsetX, offsetY;
             
-            // 鼠标按下事件
-            btn.addEventListener('mousedown', function(e) {
-                isDragging = true;
-                offsetX = e.clientX - btn.getBoundingClientRect().left;
-                offsetY = e.clientY - btn.getBoundingClientRect().top;
-                btn.style.cursor = 'grabbing';
-            });
+            // 拖拽功能
+        function setupDrag(element) {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
             
-            // 鼠标移动事件
-            document.addEventListener('mousemove', function(e) {
-                if (!isDragging) return;
+            // 鼠标/触摸开始事件
+            function handleStart(e) {
+                e.preventDefault();
+                isDragging = true;
                 
-                let x = e.clientX - offsetX;
-                let y = e.clientY - offsetY;
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                startX = clientX;
+                startY = clientY;
+                startLeft = parseInt(window.getComputedStyle(element).left);
+                startTop = parseInt(window.getComputedStyle(element).top);
+                
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('mouseup', handleEnd);
+                document.addEventListener('touchend', handleEnd);
+            }
+            
+            // 移动事件
+            function handleMove(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                const dx = clientX - startX;
+                const dy = clientY - startY;
                 
                 // 限制在可视范围内
-                const maxX = window.innerWidth - btn.offsetWidth;
-                const maxY = window.innerHeight - btn.offsetHeight;
+                const maxX = window.innerWidth - element.offsetWidth;
+                const maxY = window.innerHeight - element.offsetHeight;
                 
-                x = Math.max(0, Math.min(x, maxX));
-                y = Math.max(0, Math.min(y, maxY));
+                const newLeft = Math.max(0, Math.min(startLeft + dx, maxX));
+                const newTop = Math.max(0, Math.min(startTop + dy, maxY));
                 
-                btn.style.left = x + 'px';
-                btn.style.top = y + 'px';
-                btn.style.position = 'fixed';
-            });
+                element.style.left = newLeft + 'px';
+                element.style.top = newTop + 'px';
+            }
             
-            // 鼠标释放事件
-            document.addEventListener('mouseup', function() {
+            // 结束事件
+            function handleEnd() {
                 isDragging = false;
-                btn.style.cursor = 'grab';
-            });
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('touchend', handleEnd);
+            }
+            
+            element.addEventListener('mousedown', handleStart);
+            element.addEventListener('touchstart', handleStart, { passive: false });
+        }
+        
+        setupDrag(btn);
             
             // 初始化按钮样式
             btn.style.cursor = 'grab';
@@ -92,22 +120,39 @@
             document.querySelector('.user-name').textContent = userNickname;
             
             // 侧边栏控制
-            btn.addEventListener('click', function(e) {
-                // 防止拖拽时触发点击事件
-                if (Math.abs(parseInt(btn.style.left || '20') - 20) > 5 || 
-                    Math.abs(parseInt(btn.style.top || '20') - 20) > 5) {
-                    return;
-                }
-                
-                document.getElementById('sidebar').classList.toggle('active');
-                // 切换菜单按钮图标
-                const icon = this.querySelector('i');
-                if (document.getElementById('sidebar').classList.contains('active')) {
-                    icon.classList.replace('fa-bars', 'fa-times');
-                } else {
-                    icon.classList.replace('fa-times', 'fa-bars');
-                }
-            });
+            let lastLeft = 20;
+let lastTop = 20;
+
+btn.addEventListener('click', function(e) {
+    const currentLeft = parseInt(window.getComputedStyle(this).left);
+    const currentTop = parseInt(window.getComputedStyle(this).top);
+    
+    // 只有位置没有变化时才执行返回初始位置和呼出侧边栏的逻辑
+    if (currentLeft === lastLeft && currentTop === lastTop) {
+        // 添加返回初始位置的动画效果
+        this.style.transition = 'left 0.3s ease, top 0.3s ease';
+        this.style.left = '20px';
+        this.style.top = '20px';
+        
+        // 动画结束后移除transition属性
+        setTimeout(() => {
+            this.style.transition = '';
+        }, 300);
+        
+        document.getElementById('sidebar').classList.toggle('active');
+        // 切换菜单按钮图标
+        const icon = this.querySelector('i');
+        if (document.getElementById('sidebar').classList.contains('active')) {
+            icon.classList.replace('fa-bars', 'fa-times');
+        } else {
+            icon.classList.replace('fa-times', 'fa-bars');
+        }
+    }
+    
+    // 更新最后记录的位置
+    lastLeft = currentLeft;
+    lastTop = currentTop;
+});
             
             // 菜单项点击效果
             document.querySelectorAll('.sidebar-item').forEach(item => {
@@ -124,6 +169,21 @@
                         .classList.replace('fa-times', 'fa-bars');
                 });
             });
+        });
+        
+        // 点击页面空白处关闭侧边栏
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.getElementById('menu-btn');
+            
+            if (sidebar.classList.contains('active') && 
+                !sidebar.contains(e.target) && 
+                e.target !== menuBtn && 
+                !menuBtn.contains(e.target)) {
+                
+                sidebar.classList.remove('active');
+                menuBtn.querySelector('i').classList.replace('fa-times', 'fa-bars');
+            }
         });
     </script>
     

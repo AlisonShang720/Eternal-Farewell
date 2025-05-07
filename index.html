@@ -38,6 +38,18 @@
             document.querySelectorAll('.frame-container').forEach(el => el.classList.remove('active'));
             document.getElementById(frameId).classList.add('active');
         }
+        
+        // 页面加载时检查用户是否首次访问
+        document.addEventListener('DOMContentLoaded', function() {
+            const hasUser = localStorage.getItem('userNickname') || localStorage.getItem('userAvatar');
+            if (!hasUser) {
+                // 首次访问，显示注册界面
+                showFrame('register-frame');
+            } else {
+                // 非首次访问，显示登录界面
+                showFrame('login-frame');
+            }
+        });
     </script>
 </body>
 </html>

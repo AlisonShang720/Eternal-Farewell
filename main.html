@@ -43,7 +43,8 @@
     <script>
         // 初始化地图
         const map = L.map('map', {
-            zoomControl: false
+            zoomControl: false,
+            dragging: !L.Browser.mobile
         }).setView([39.9042, 116.4074], 13);
         
         // 从本地存储加载用户信息
@@ -65,46 +66,99 @@
         const menuBtn = document.getElementById('menu-btn');
         
         // 拖拽功能
-        menuBtn.addEventListener('mousedown', function(e) {
-            e.preventDefault();
+        function setupDrag(element) {
+            let isDragging = false;
+            let startX, startY, startLeft, startTop;
             
-            const startX = e.clientX;
-            const startY = e.clientY;
-            const startLeft = parseInt(window.getComputedStyle(menuBtn).left);
-            const startTop = parseInt(window.getComputedStyle(menuBtn).top);
-            
-            function moveHandler(e) {
-                const dx = e.clientX - startX;
-                const dy = e.clientY - startY;
-                menuBtn.style.left = (startLeft + dx) + 'px';
-                menuBtn.style.top = (startTop + dy) + 'px';
+            // 鼠标/触摸开始事件
+            function handleStart(e) {
+                e.preventDefault();
+                isDragging = true;
+                
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                startX = clientX;
+                startY = clientY;
+                startLeft = parseInt(window.getComputedStyle(element).left);
+                startTop = parseInt(window.getComputedStyle(element).top);
+                
+                document.addEventListener('mousemove', handleMove);
+                document.addEventListener('touchmove', handleMove, { passive: false });
+                document.addEventListener('mouseup', handleEnd);
+                document.addEventListener('touchend', handleEnd);
             }
             
-            function upHandler() {
-                document.removeEventListener('mousemove', moveHandler);
-                document.removeEventListener('mouseup', upHandler);
+            // 移动事件
+            function handleMove(e) {
+                if (!isDragging) return;
+                e.preventDefault();
+                
+                const clientX = e.clientX || e.touches[0].clientX;
+                const clientY = e.clientY || e.touches[0].clientY;
+                
+                const dx = clientX - startX;
+                const dy = clientY - startY;
+                
+                // 限制在可视范围内
+                const maxX = window.innerWidth - element.offsetWidth;
+                const maxY = window.innerHeight - element.offsetHeight;
+                
+                const newLeft = Math.max(0, Math.min(startLeft + dx, maxX));
+                const newTop = Math.max(0, Math.min(startTop + dy, maxY));
+                
+                element.style.left = newLeft + 'px';
+                element.style.top = newTop + 'px';
             }
             
-            document.addEventListener('mousemove', moveHandler);
-            document.addEventListener('mouseup', upHandler);
-        });
+            // 结束事件
+            function handleEnd() {
+                isDragging = false;
+                document.removeEventListener('mousemove', handleMove);
+                document.removeEventListener('touchmove', handleMove);
+                document.removeEventListener('mouseup', handleEnd);
+                document.removeEventListener('touchend', handleEnd);
+            }
+            
+            element.addEventListener('mousedown', handleStart);
+            element.addEventListener('touchstart', handleStart, { passive: false });
+        }
         
-        menuBtn.addEventListener('click', function(e) {
-            // 防止拖拽时触发点击事件
-            if (Math.abs(parseInt(menuBtn.style.left || '20') - 20) > 5 || 
-                Math.abs(parseInt(menuBtn.style.top || '20') - 20) > 5) {
-                return;
-            }
-            
-            document.getElementById('sidebar').classList.toggle('active');
-            // 切换菜单按钮图标
-            const icon = this.querySelector('i');
-            if (document.getElementById('sidebar').classList.contains('active')) {
-                icon.classList.replace('fa-bars', 'fa-times');
-            } else {
-                icon.classList.replace('fa-times', 'fa-bars');
-            }
-        });
+        setupDrag(menuBtn);
+        
+        let lastLeft = 20;
+let lastTop = 20;
+
+menuBtn.addEventListener('click', function(e) {
+    const currentLeft = parseInt(window.getComputedStyle(this).left);
+    const currentTop = parseInt(window.getComputedStyle(this).top);
+    
+    // 只有位置没有变化时才执行返回初始位置和呼出侧边栏的逻辑
+    if (currentLeft === lastLeft && currentTop === lastTop) {
+        // 添加返回初始位置的动画效果
+        this.style.transition = 'left 0.3s ease, top 0.3s ease';
+        this.style.left = '20px';
+        this.style.top = '20px';
+        
+        // 动画结束后移除transition属性
+        setTimeout(() => {
+            this.style.transition = '';
+        }, 300);
+        
+        document.getElementById('sidebar').classList.toggle('active');
+        // 切换菜单按钮图标
+        const icon = this.querySelector('i');
+        if (document.getElementById('sidebar').classList.contains('active')) {
+            icon.classList.replace('fa-bars', 'fa-times');
+        } else {
+            icon.classList.replace('fa-times', 'fa-bars');
+        }
+    }
+    
+    // 更新最后记录的位置
+    lastLeft = currentLeft;
+    lastTop = currentTop;
+});
         
         // 菜单项点击效果
         document.querySelectorAll('.sidebar-item').forEach(item => {
@@ -126,8 +180,38 @@
         document.getElementById('record-btn').addEventListener('click', function() {
             const now = new Date();
             const timestamp = now.toLocaleString('zh-CN', { timeZone: 'Asia/Shanghai' });
-            const coords = map.getCenter();
-            alert(`已记录：${timestamp}\n位置：${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+            
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    function(position) {
+                        const coords = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        alert(`已记录：${timestamp}\n位置：${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`);
+                    },
+                    function(error) {
+                        alert('位置信息获取失败');
+                    }
+                );
+            } else {
+                alert('位置信息获取失败');
+            }
+        });
+        
+        // 点击页面空白处关闭侧边栏
+        document.addEventListener('click', function(e) {
+            const sidebar = document.getElementById('sidebar');
+            const menuBtn = document.getElementById('menu-btn');
+            
+            if (sidebar.classList.contains('active') && 
+                !sidebar.contains(e.target) && 
+                e.target !== menuBtn && 
+                !menuBtn.contains(e.target)) {
+                
+                sidebar.classList.remove('active');
+                menuBtn.querySelector('i').classList.replace('fa-times', 'fa-bars');
+            }
         });
 
         // 显示iframe框架
