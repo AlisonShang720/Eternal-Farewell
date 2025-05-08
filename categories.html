@@ -124,6 +124,9 @@
 let lastTop = 20;
 
 btn.addEventListener('click', function(e) {
+    // 阻止事件冒泡，避免与触摸事件冲突
+    e.stopPropagation();
+    
     const currentLeft = parseInt(window.getComputedStyle(this).left);
     const currentTop = parseInt(window.getComputedStyle(this).top);
     
@@ -153,6 +156,12 @@ btn.addEventListener('click', function(e) {
     lastLeft = currentLeft;
     lastTop = currentTop;
 });
+
+// 添加触摸事件监听
+document.getElementById('menu-btn').addEventListener('touchstart', function(e) {
+    e.stopPropagation();
+    this.click();
+}, {passive: true});
             
             // 菜单项点击效果
             document.querySelectorAll('.sidebar-item').forEach(item => {

@@ -44,7 +44,8 @@
         // 初始化地图
         const map = L.map('map', {
             zoomControl: false,
-            dragging: !L.Browser.mobile
+            dragging: true,
+            tap: !L.Browser.android
         }).setView([39.9042, 116.4074], 13);
         
         // 从本地存储加载用户信息
@@ -130,6 +131,9 @@
 let lastTop = 20;
 
 menuBtn.addEventListener('click', function(e) {
+    // 阻止事件冒泡，避免与触摸事件冲突
+    e.stopPropagation();
+    
     const currentLeft = parseInt(window.getComputedStyle(this).left);
     const currentTop = parseInt(window.getComputedStyle(this).top);
     
@@ -159,6 +163,12 @@ menuBtn.addEventListener('click', function(e) {
     lastLeft = currentLeft;
     lastTop = currentTop;
 });
+
+// 添加触摸事件监听
+menuBtn.addEventListener('touchstart', function(e) {
+    e.stopPropagation();
+    this.click();
+}, {passive: true});
         
         // 菜单项点击效果
         document.querySelectorAll('.sidebar-item').forEach(item => {
