@@ -16,7 +16,7 @@
         .settings-item { background: white; margin: 15px; border-radius: 10px; padding: 15px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
         .settings-title { font-weight: bold; margin-bottom: 10px; }
         .settings-content { color: #666; }
-        #menu-btn { position: fixed; left: 20px; top: 20px; z-index: 1000; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        #menu-btn { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1000; background: white; border: none; border-radius: 0 10px 10px 0; width: 20px; height: 60px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
     </style>
 </head>
 <body>
@@ -147,10 +147,10 @@
                     const maxX = window.innerWidth - element.offsetWidth;
                     const maxY = window.innerHeight - element.offsetHeight;
                     
-                    const newLeft = Math.max(0, Math.min(startLeft + dx, maxX));
                     const newTop = Math.max(0, Math.min(startTop + dy, maxY));
                     
-                    element.style.left = newLeft + 'px';
+                    // 固定水平位置为0px，只允许垂直方向移动
+                    element.style.left = '0px';
                     element.style.top = newTop + 'px';
                 }
                 
@@ -176,18 +176,8 @@ btn.addEventListener('click', function(e) {
     const currentLeft = parseInt(window.getComputedStyle(this).left);
     const currentTop = parseInt(window.getComputedStyle(this).top);
     
-    // 只有位置没有变化时才执行返回初始位置和呼出侧边栏的逻辑
+    // 只有在位置未变化时才切换侧边栏
     if (currentLeft === lastLeft && currentTop === lastTop) {
-        // 添加返回初始位置的动画效果
-        this.style.transition = 'left 0.3s ease, top 0.3s ease';
-        this.style.left = '20px';
-        this.style.top = '20px';
-        
-        // 动画结束后移除transition属性
-        setTimeout(() => {
-            this.style.transition = '';
-        }, 300);
-        
         document.getElementById('sidebar').classList.toggle('active');
         // 切换菜单按钮图标
         const icon = this.querySelector('i');
@@ -238,23 +228,6 @@ document.addEventListener('click', function(e) {
     lastLeft = currentLeft;
     lastTop = currentTop;
 });
-            
-            // 菜单项点击效果
-            document.querySelectorAll('.sidebar-item').forEach(item => {
-                item.addEventListener('click', function() {
-                    // 移除所有菜单项的active类
-                    document.querySelectorAll('.sidebar-item').forEach(i => {
-                        i.classList.remove('active');
-                    });
-                    // 为当前点击项添加active类
-                    this.classList.add('active');
-                    // 关闭侧边栏
-                    document.getElementById('sidebar').classList.remove('active');
-                    document.getElementById('menu-btn').querySelector('i')
-                        .classList.replace('fa-times', 'fa-bars');
-                });
-            });
-        });
         function showFrame(frameId) {
             parent.showFrame(frameId);
         }

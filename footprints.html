@@ -14,7 +14,7 @@
         .footprint-date { color: #666; font-size: 14px; margin-bottom: 10px; }
         .footprint-locations { color: #4285f4; font-size: 14px; }
         #add-btn { position: fixed; right: 20px; bottom: 20px; width: 60px; height: 60px; border-radius: 50%; background: #4285f4; color: white; border: none; box-shadow: 0 2px 10px rgba(0,0,0,0.2); z-index: 1000; }
-        #menu-btn { position: fixed; left: 20px; top: 20px; z-index: 1000; background: white; border: none; border-radius: 50%; width: 40px; height: 40px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        #menu-btn { position: fixed; left: 0; top: 50%; transform: translateY(-50%); z-index: 1000; background: white; border: none; border-radius: 0 10px 10px 0; width: 20px; height: 60px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); cursor: pointer; padding: 0; display: flex; align-items: center; justify-content: center; }
         #sidebar { position: fixed; left: -300px; top: 0; width: 300px; height: 100%; background: white; z-index: 1000; transition: 0.3s; }
         #sidebar.active { left: 0; }
         .sidebar-header { padding: 20px; text-align: center; border-bottom: 1px solid #eee; }
@@ -87,20 +87,17 @@
                 if (!isDragging) return;
                 e.preventDefault();
                 
-                const clientX = e.clientX || e.touches[0].clientX;
                 const clientY = e.clientY || e.touches[0].clientY;
                 
-                const dx = clientX - startX;
                 const dy = clientY - startY;
                 
                 // 限制在可视范围内
-                const maxX = window.innerWidth - element.offsetWidth;
                 const maxY = window.innerHeight - element.offsetHeight;
                 
-                const newLeft = Math.max(0, Math.min(startLeft + dx, maxX));
                 const newTop = Math.max(0, Math.min(startTop + dy, maxY));
                 
-                element.style.left = newLeft + 'px';
+                // 固定水平位置在左侧边缘
+                element.style.left = '0px';
                 element.style.top = newTop + 'px';
             }
             
@@ -168,19 +165,7 @@ document.getElementById('menu-btn').addEventListener('click', function(e) {
     const currentLeft = parseInt(window.getComputedStyle(this).left);
     const currentTop = parseInt(window.getComputedStyle(this).top);
     
-    // 只有位置没有变化时才执行返回初始位置和呼出侧边栏的逻辑
-    if (currentLeft === lastLeft && currentTop === lastTop) {
-        // 添加返回初始位置的动画效果
-        this.style.transition = 'left 0.3s ease, top 0.3s ease';
-        this.style.left = '20px';
-        this.style.top = '20px';
-        
-        // 动画结束后移除transition属性
-        setTimeout(() => {
-            this.style.transition = '';
-        }, 300);
-        
-        document.getElementById('sidebar').classList.toggle('active');
+    document.getElementById('sidebar').classList.toggle('active');
         // 切换菜单按钮图标
         const icon = this.querySelector('i');
         if (document.getElementById('sidebar').classList.contains('active')) {
@@ -188,7 +173,6 @@ document.getElementById('menu-btn').addEventListener('click', function(e) {
         } else {
             icon.classList.replace('fa-times', 'fa-bars');
         }
-    }
     
     // 更新最后记录的位置
     lastLeft = currentLeft;
